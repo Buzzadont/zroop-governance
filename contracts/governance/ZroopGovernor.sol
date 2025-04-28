@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import "@openzeppelin/contracts-upgradeable/governance/GovernorUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorSettingsUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/governance/extensions/GovernorTimelockControlUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "./ZroopTimelock.sol";
 
 /**
@@ -23,15 +23,15 @@ import "./ZroopTimelock.sol";
  * proposal signing, and timelock execution.
  */
 contract ZroopGovernor is
-    Governor,
-    GovernorSettings,
-    GovernorCountingSimple,
-    GovernorVotes,
-    GovernorVotesQuorumFraction,
-    GovernorTimelockControl,
-    ReentrancyGuard,
-    Pausable,
-    EIP712,
+    GovernorUpgradeable,
+    GovernorSettingsUpgradeable,
+    GovernorCountingSimpleUpgradeable,
+    GovernorVotesUpgradeable,
+    GovernorVotesQuorumFractionUpgradeable,
+    GovernorTimelockControlUpgradeable,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
+    EIP712Upgradeable,
     Initializable,
     UUPSUpgradeable
 {
@@ -144,7 +144,7 @@ contract ZroopGovernor is
      * @param _treasury The treasury address for deposits
      */
     function initialize(
-        IVotes _token,
+        IVotesUpgradeable _token,
         ZroopTimelock _timelock,
         uint48 _votingDelay,
         uint32 _votingPeriod,
@@ -645,7 +645,7 @@ contract ZroopGovernor is
     function votingDelay()
         public
         view
-        override(Governor, GovernorSettings)
+        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingDelay();
@@ -654,7 +654,7 @@ contract ZroopGovernor is
     function votingPeriod()
         public
         view
-        override(Governor, GovernorSettings)
+        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
         returns (uint256)
     {
         return super.votingPeriod();
@@ -663,7 +663,7 @@ contract ZroopGovernor is
     function quorum(uint256 blockNumber)
         public
         view
-        override(Governor, GovernorVotesQuorumFraction)
+        override(GovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
         returns (uint256)
     {
         return super.quorum(blockNumber);
@@ -672,7 +672,7 @@ contract ZroopGovernor is
     function state(uint256 proposalId)
         public
         view
-        override(Governor, GovernorTimelockControl)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (ProposalState)
     {
         return super.state(proposalId);
@@ -684,7 +684,7 @@ contract ZroopGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) {
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) {
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
@@ -693,14 +693,14 @@ contract ZroopGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+    ) internal override(GovernorUpgradeable, GovernorTimelockControlUpgradeable) returns (uint256) {
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
     function _executor()
         internal
         view
-        override(Governor, GovernorTimelockControl)
+        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
         returns (address)
     {
         return super._executor();

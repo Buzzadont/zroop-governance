@@ -40,9 +40,11 @@ Main governance contract:
 ### ZroopTimelock
 
 Ensures secure execution of proposals:
-- Implements delay mechanism
-- Requires multiple signatures
-- Supports operation cancellation
+- Implements delay mechanism (1-30 days)
+- Integrates with OpenZeppelin's TimelockController
+- Supports operation pausing
+- Enforces minimum and maximum delays
+- Manages role-based access control (PROPOSER, EXECUTOR, CANCELLER)
 
 ## Security Features
 

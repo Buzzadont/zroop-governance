@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title ZroopVotes
@@ -68,7 +68,7 @@ contract ZroopVotes is Ownable, Pausable {
      * @param account The address to check
      * @return The voting power of the address
      */
-    function getVotingPower(address account) external view returns (uint256) {
+    function getVotingPower(address account) public view returns (uint256) {
         if (address(nftContract) == address(0)) return 0;
         return nftContract.balanceOf(account) * VOTES_PER_NFT;
     }
@@ -78,7 +78,7 @@ contract ZroopVotes is Ownable, Pausable {
      * @param account The address to check
      * @return The available voting power
      */
-    function getAvailableVotingPower(address account) external view returns (uint256) {
+    function getAvailableVotingPower(address account) public view returns (uint256) {
         uint256 totalPower = getVotingPower(account);
         uint256 locked = lockedVotingPower[account];
         return totalPower > locked ? totalPower - locked : 0;
