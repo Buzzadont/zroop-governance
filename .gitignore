@@ -29,5 +29,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Developer documentation
-DEVELOPER_RU.md 
+# Internal documentation
+dev.internal.md 
