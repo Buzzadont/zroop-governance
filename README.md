@@ -14,7 +14,7 @@ The Zroop Governance System allows NFT holders to participate in decision-making
 
 - NFT-based voting power
 - Proposal creation with multiple options
-- Vote delegation
+- Professional vote delegation system
 - Proposal signing mechanism
 - Timelock for secure execution
 - Upgradeable contracts
@@ -25,8 +25,9 @@ The Zroop Governance System allows NFT holders to participate in decision-making
 
 Manages voting power based on NFT ownership:
 - Voting power is calculated based on NFT balance
-- Tokens can be locked for a period
-- Supports vote delegation
+- Supports professional delegation system
+- Implements anti-manipulation measures
+- Security timelock for delegations
 
 ### ZroopGovernor
 
@@ -34,8 +35,9 @@ Main governance contract:
 - Creates and manages proposals
 - Handles voting process
 - Manages proposal execution
-- Supports vote delegation
+- Supports expert delegation system
 - Implements proposal signing
+- Ensures secure execution through timelock
 
 ### ZroopTimelock
 
@@ -44,7 +46,7 @@ Ensures secure execution of proposals:
 - Integrates with OpenZeppelin's TimelockController
 - Supports operation pausing
 - Enforces minimum and maximum delays
-- Manages role-based access control (PROPOSER, EXECUTOR, CANCELLER)
+- Manages role-based access control
 
 ## Security Features
 
@@ -53,6 +55,18 @@ Ensures secure execution of proposals:
 - Pausable functionality
 - Timelock mechanism
 - Signature verification
+- Anti-manipulation measures for delegation
+- Protection against flash-delegation attacks
+
+## Delegation System
+
+The system implements a professional delegation mechanism that allows:
+- NFT holders to delegate voting power to experts
+- Improved governance efficiency through active participation
+- Protection against voting manipulation
+- Temporary vote transfer with security measures
+- Maximum of 5 delegates per user
+- 24-hour delegation lock period
 
 ## Usage
 

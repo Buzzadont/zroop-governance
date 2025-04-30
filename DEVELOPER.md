@@ -146,155 +146,134 @@
 
 2. **Contract Deployment Order**
    ```javascript
-   // 1. Deploy Governor Implementation
+   // 1. Deploy ZroopVotes
+   const zroopVotes = await deploy("ZroopVotes", [
+     nftContractAddress  // existing NFT contract address
+   ]);
+   console.log("ZroopVotes deployed to:", zroopVotes.address);
+
+   // 2. Deploy Timelock with temporary Governor
+   const tempGovernorAddress = deployerAddress; 
+   const timelock = await deploy("ZroopTimelock", [
+     isMainnet ? (7 * 24 * 3600) : (1 * 24 * 3600), // minDelay (7 days or 1 day)
+     tempGovernorAddress
+   ]);
+   console.log("ZroopTimelock deployed to:", timelock.address);
+
+   // 3. Deploy Governor Implementation
    const governorImplementation = await deploy("ZroopGovernor");
-   
-   // 2. Deploy Governor Proxy
-   const governorProxy = await deployProxy("ZroopGovernor", [
-     // initialization parameters
+   console.log("ZroopGovernor implementation deployed to:", governorImplementation.address);
+
+   // 4. Deploy Governor Proxy
+   const governorProxy = await deploy("ZroopGovernorProxy", [
+     governorImplementation.address,
+     encodeInitializeParams([
+       zroopVotes.address,        // votes contract address
+       timelock.address,          // timelock address
+       0,                         // votingDelay (0 blocks)
+       isMainnet ? 
+         (7 * 24 * 3600) :       // votingPeriod for Forma (7 days)
+         (1 * 24 * 3600),        // votingPeriod for Sketchpad (1 day)
+       isMainnet ? 10 : 4,       // quorumPercentage (10% or 4%)
+       nftContractAddress,        // NFT address
+       isMainnet,                // network flag
+       treasuryAddress          // treasury address
+     ])
    ]);
-   
-   // 3. Deploy Timelock
-   // Only requires:
-   const timelock = await deployProxy("ZroopTimelock", [
-     minDelay,        // operation delay (1-30 days)
-     governorProxy.address  // Governor Proxy address
-   ]);
-   
-   // 4. Set Timelock address in Governor
-   await governorProxy.setTimelock(timelock.address);
-   
+   console.log("ZroopGovernorProxy deployed to:", governorProxy.address);
+
+   // 5. Configure roles in Timelock
+   await timelock.grantRole(PROPOSER_ROLE, governorProxy.address);
+   await timelock.grantRole(CANCELLER_ROLE, governorProxy.address);
+   await timelock.revokeRole(PROPOSER_ROLE, tempGovernorAddress);
+   await timelock.revokeRole(CANCELLER_ROLE, tempGovernorAddress);
+   console.log("Timelock roles configured");
+
    // Note: contract will automatically set up roles:
    // - PROPOSER_ROLE is granted only to Governor
    // - EXECUTOR_ROLE is open to everyone (address(0))
    // - CANCELLER_ROLE is also granted to Governor
    // - DEFAULT_ADMIN_ROLE is granted to timelock itself
-   
-   // All access logic is now controlled through NFT in Governor contract
    ```
 
-3. **Testnet Deployment**
-   ```bash
-   # Deploy to Sketchpad
-   npx hardhat run scripts/deploy.js --network sketchpad
-   ```
-
-4. **Mainnet Deployment**
-   ```bash
-   # Deploy to Forma
-   npx hardhat run scripts/deploy.js --network forma
-   ```
-
-5. **Contract Initialization**
+3. **Post-deployment Checks**
    ```javascript
-   // Example of initialization
-   await governor.initialize(
-     tokenAddress,
-     timelockAddress,
-     votingDelay,
-     votingPeriod,
-     quorumPercentage,
-     nftContractAddress,
-     isMainnet,
-     treasuryAddress
+   // 1. Check Timelock roles
+   const hasProposerRole = await timelock.hasRole(PROPOSER_ROLE, governorProxy.address);
+   const hasCancellerRole = await timelock.hasRole(CANCELLER_ROLE, governorProxy.address);
+   console.log("Governor has PROPOSER_ROLE:", hasProposerRole);
+   console.log("Governor has CANCELLER_ROLE:", hasCancellerRole);
+
+   // 2. Check Governor parameters
+   const votingPeriod = await governorProxy.votingPeriod();
+   const quorum = await governorProxy.quorumNumerator();
+   const votingDelay = await governorProxy.votingDelay();
+   console.log("Voting Period:", votingPeriod.toString());
+   console.log("Quorum:", quorum.toString(), "%");
+   console.log("Voting Delay:", votingDelay.toString());
+
+   // 3. Check contract connections
+   const timelockAddress = await governorProxy.timelock();
+   const votesAddress = await governorProxy.token();
+   const nftAddress = await governorProxy.nftContract();
+   console.log("Timelock address in Governor:", timelockAddress);
+   console.log("Votes address in Governor:", votesAddress);
+   console.log("NFT address in Governor:", nftAddress);
+   ```
+
+4. **Contract Verification**
+   ```bash
+   # Verify ZroopVotes
+   npx hardhat verify --network forma $ZROOP_VOTES_ADDRESS $NFT_CONTRACT_ADDRESS
+
+   # Verify Timelock
+   npx hardhat verify --network forma $TIMELOCK_ADDRESS $MIN_DELAY $TEMP_GOVERNOR_ADDRESS
+
+   # Verify Governor Implementation
+   npx hardhat verify --network forma $GOVERNOR_IMPLEMENTATION_ADDRESS
+
+   # Verify Governor Proxy
+   npx hardhat verify --network forma $GOVERNOR_PROXY_ADDRESS $IMPLEMENTATION_ADDRESS "$INITIALIZE_PARAMS"
+   ```
+
+### Delegation System
+
+1. **Purpose**
+   - Enable expert participation in governance
+   - Improve governance efficiency
+   - Allow representation of interests
+   - Support temporary vote transfer
+   - Enable professional governance management
+
+2. **Security Measures**
+   ```javascript
+   const MAX_DELEGATIONS = 5;        // Maximum number of delegates per user
+   const DELEGATION_LOCK_PERIOD = 1;  // Lock period in days
+   ```
+
+   These limits prevent:
+   - Flash-delegation attacks
+   - Mid-voting delegation changes
+   - Cyclic delegation schemes
+
+3. **Delegation Flow**
+   ```javascript
+   // Direct delegation
+   await zroopVotes.delegate(delegateeAddress);
+
+   // Delegation with signature
+   const signature = await delegator.signMessage(
+     ethers.utils.arrayify(
+       ethers.utils.keccak256(
+         ethers.utils.defaultAbiCoder.encode(
+           ["address", "uint256", "uint256"],
+           [delegatee, nonce, expiry]
+         )
+       )
+     )
    );
+   await zroopVotes.delegateBySig(delegatee, nonce, expiry, v, r, s);
    ```
-
-### 4. Contract Updates
-
-1. **Preparing for Update**
-   - Create new contract version
-   - Preserve storage layout
-   - Add new functions
-   - Update documentation
-
-2. **Testing the Update**
-   ```bash
-   # Test upgrade
-   npx hardhat run scripts/test-upgrade.js
-   ```
-
-3. **Testnet Update**
-   ```bash
-   # Update on Sketchpad
-   npx hardhat run scripts/upgrade.js --network sketchpad
-   ```
-
-4. **Mainnet Update**
-   ```bash
-   # Update on Forma
-   npx hardhat run scripts/upgrade.js --network forma
-   ```
-
-### 5. Monitoring and Maintenance
-
-1. **Regular Checks**
-   - Monitor events
-   - Check proposal states
-   - Verify delegations
-   - Monitor timelock
-
-2. **Parameter Updates**
-   ```javascript
-   // Example of parameter updates
-   await governor.setVotingPeriod(newPeriod);
-   await governor.setQuorum(newQuorum);
-   await governor.setNFTContract(newNFTContract);
-   ```
-
-### 6. Emergency Procedures
-
-1. **Contract Pause**
-   ```javascript
-   // Pause contract
-   await governor.pause();
-   
-   // Unpause contract
-   await governor.unpause();
-   ```
-
-2. **Operation Cancellation**
-   ```javascript
-   // Cancel proposal
-   await governor.cancelProposal(proposalId);
-   
-   // Cancel timelock operation
-   await timelock.cancel(operationId);
-   ```
-
-### 7. Common Issues and Solutions
-
-1. **Voting Issues**
-   - Check NFT ownership
-   - Verify delegation
-   - Check lock period
-   - Verify vote weight
-
-2. **Proposal Issues**
-   - Check deposit amount
-   - Verify option count
-   - Check signature count
-   - Verify timelock
-
-3. **Delegation Issues**
-   - Check delegation limit
-   - Verify lock period
-   - Check NFT ownership
-   - Verify delegate address
-
-### 8. Future Improvements
-
-1. **Planned Features**
-   - Enhanced delegation
-   - Better vote tracking
-   - Improved UI
-   - Additional security
-
-2. **Potential Updates**
-   - New voting mechanisms
-   - Additional security features
-   - Better scalability
-   - More flexibility
 
 ## Common Issues
 
