@@ -14,4 +14,19 @@ interface IZroopersFragments {
         bytes32 r,
         bytes32 s
     ) external;
+
+    /**
+     * @dev Returns the voting power of an account
+     */
+    function getVotingPower(address account) external view returns (uint256);
+
+    /**
+     * @dev Checks if an account can participate in voting
+     */
+    function canVote(address account) external view returns (bool);
+
+    /**
+     * @dev Returns the token type identifier
+     */
+    function getTokenType() external pure returns (uint8);
 } 
