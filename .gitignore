@@ -33,3 +33,7 @@ yarn-error.log*
 # zroop
 dev.zroop
 .zroop
+
+# cursor
+.cursorrules
+.cursor/
